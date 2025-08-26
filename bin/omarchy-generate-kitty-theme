@@ -21,15 +21,15 @@ if [[ ! -f "$ALACRITTY_THEME" ]]; then
 fi
 
 # Extract primary colors from alacritty.toml (most complete color source)
-foreground=$(sed -n '/^\[colors\.primary\]/,/^\[/p' "$ALACRITTY_THEME" | grep '^foreground' | sed 's/.*= *"\(#[0-9a-fA-F]*\)".*/\1/')
-background=$(sed -n '/^\[colors\.primary\]/,/^\[/p' "$ALACRITTY_THEME" | grep '^background' | sed 's/.*= *"\(#[0-9a-fA-F]*\)".*/\1/')
+foreground=$(sed -n '/^\[colors\.primary\]/,/^\[/p' "$ALACRITTY_THEME" | grep '^foreground' | sed "s/.*= *'\(#[0-9a-fA-F]*\)'.*/\1/")
+background=$(sed -n '/^\[colors\.primary\]/,/^\[/p' "$ALACRITTY_THEME" | grep '^background' | sed "s/.*= *'\(#[0-9a-fA-F]*\)'.*/\1/")
 
 # Cursor colors
-cursor=$(sed -n '/^\[colors\.cursor\]/,/^\[/p' "$ALACRITTY_THEME" | grep '^cursor' | sed 's/.*= *"\(#[0-9a-fA-F]*\)".*/\1/')
-cursor_text=$(sed -n '/^\[colors\.cursor\]/,/^\[/p' "$ALACRITTY_THEME" | grep '^text' | sed 's/.*= *"\(#[0-9a-fA-F]*\)".*/\1/')
+cursor=$(sed -n '/^\[colors\.cursor\]/,/^\[/p' "$ALACRITTY_THEME" | grep '^cursor' | sed "s/.*= *'\(#[0-9a-fA-F]*\)'.*/\1/")
+cursor_text=$(sed -n '/^\[colors\.cursor\]/,/^\[/p' "$ALACRITTY_THEME" | grep '^text' | sed "s/.*= *'\(#[0-9a-fA-F]*\)'.*/\1/")
 
 # Selection colors  
-selection_bg=$(sed -n '/^\[colors\.selection\]/,/^\[/p' "$ALACRITTY_THEME" | grep '^background' | sed 's/.*= *"\(#[0-9a-fA-F]*\)".*/\1/')
+selection_bg=$(sed -n '/^\[colors\.selection\]/,/^\[/p' "$ALACRITTY_THEME" | grep '^background' | sed "s/.*= *'\(#[0-9a-fA-F]*\)'.*/\1/")
 selection_fg="$foreground"  # Most themes use foreground for selection text
 
 # Generate kitty.conf with complete color palette
@@ -58,13 +58,13 @@ echo "# Terminal color palette" >> "$OUTPUT_FILE"
 # Normal colors (0-7)
 colors=("black" "red" "green" "yellow" "blue" "magenta" "cyan" "white")
 for i in "${!colors[@]}"; do
-  color=$(sed -n '/^\[colors\.normal\]/,/^\[/p' "$ALACRITTY_THEME" | grep "^${colors[i]}" | sed 's/.*= *"\(#[0-9a-fA-F]*\)".*/\1/')
+  color=$(sed -n '/^\[colors\.normal\]/,/^\[/p' "$ALACRITTY_THEME" | grep "^${colors[i]}" | sed "s/.*= *'\(#[0-9a-fA-F]*\)'.*/\1/")
   echo "color$i $color" >> "$OUTPUT_FILE"
 done
 
 # Bright colors (8-15)
 for i in "${!colors[@]}"; do
-  bright_color=$(sed -n '/^\[colors\.bright\]/,/^\[/p' "$ALACRITTY_THEME" | grep "^${colors[i]}" | sed 's/.*= *"\(#[0-9a-fA-F]*\)".*/\1/')
+  bright_color=$(sed -n '/^\[colors\.bright\]/,/^\[/p' "$ALACRITTY_THEME" | grep "^${colors[i]}" | sed "s/.*= *'\(#[0-9a-fA-F]*\)'.*/\1/")
   echo "color$((i+8)) $bright_color" >> "$OUTPUT_FILE"
 done
 
@@ -74,7 +74,7 @@ echo "# Tab bar colors" >> "$OUTPUT_FILE"
 echo "tab_bar_background $background" >> "$OUTPUT_FILE"
 echo "active_tab_foreground $foreground" >> "$OUTPUT_FILE"
 echo "active_tab_background $selection_bg" >> "$OUTPUT_FILE"
-bright_black=$(sed -n '/^\[colors\.bright\]/,/^\[/p' "$ALACRITTY_THEME" | grep '^black' | sed 's/.*= *"\(#[0-9a-fA-F]*\)".*/\1/')
+bright_black=$(sed -n '/^\[colors\.bright\]/,/^\[/p' "$ALACRITTY_THEME" | grep '^black' | sed "s/.*= *'\(#[0-9a-fA-F]*\)'.*/\1/")
 echo "inactive_tab_foreground $bright_black" >> "$OUTPUT_FILE"
 echo "inactive_tab_background $background" >> "$OUTPUT_FILE"
 
