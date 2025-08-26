@@ -24,9 +24,7 @@ fi
 foreground=$(sed -n '/^\[colors\.primary\]/,/^\[/p' "$ALACRITTY_THEME" | grep '^foreground' | sed -E "s/.*= *[\"']?(#[0-9a-fA-F]*)[\"']?.*/\1/")
 background=$(sed -n '/^\[colors\.primary\]/,/^\[/p' "$ALACRITTY_THEME" | grep '^background' | sed -E "s/.*= *[\"']?(#[0-9a-fA-F]*)[\"']?.*/\1/")
 
-# Cursor colors - handle both single and double quotes
-cursor=$(sed -n '/^\[colors\.cursor\]/,/^\[/p' "$ALACRITTY_THEME" | grep '^cursor' | sed -E "s/.*= *[\"']?(#[0-9a-fA-F]*)[\"']?.*/\1/")
-cursor_text=$(sed -n '/^\[colors\.cursor\]/,/^\[/p' "$ALACRITTY_THEME" | grep '^text' | sed -E "s/.*= *[\"']?(#[0-9a-fA-F]*)[\"']?.*/\1/")
+# Skip cursor colors - too unreliable across different theme formats
 
 # Selection colors  
 selection_bg=$(sed -n '/^\[colors\.selection\]/,/^\[/p' "$ALACRITTY_THEME" | grep '^background' | sed -E "s/.*= *[\"']?(#[0-9a-fA-F]*)[\"']?.*/\1/")
@@ -41,10 +39,6 @@ cat > "$OUTPUT_FILE" << EOF
 # Basic colors
 foreground $foreground
 background $background
-
-# Cursor
-cursor $cursor
-cursor_text_color $cursor_text
 
 # Selection
 selection_foreground $selection_fg
