@@ -58,6 +58,11 @@ fi
 # Trigger alacritty config reload
 touch "$HOME/.config/alacritty/alacritty.toml"
 
+# Generate kitty theme if kitty is installed and theme has color definitions
+if command -v kitty &>/dev/null && [[ -f "$CURRENT_THEME_DIR/btop.theme" ]]; then
+  omarchy-generate-kitty-theme "$CURRENT_THEME_DIR"
+fi
+
 # Restart components to apply new theme
 pkill -SIGUSR2 btop
 omarchy-restart-waybar
