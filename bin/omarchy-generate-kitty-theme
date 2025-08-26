@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # Generate kitty.conf theme from omarchy theme colors
-# This script reads colors from btop.theme and creates kitty.conf
+# Uses alacritty.toml as the canonical color source (contains full 16-color palette)
+# Note: Future enhancement could use a central colors.json for all apps
 
 THEME_DIR="$1"
 OUTPUT_FILE="${2:-$THEME_DIR/kitty.conf}"
@@ -11,71 +12,70 @@ if [[ -z "$THEME_DIR" ]]; then
   exit 1
 fi
 
-BTOP_THEME="$THEME_DIR/btop.theme"
+ALACRITTY_THEME="$THEME_DIR/alacritty.toml"
 
-if [[ ! -f "$BTOP_THEME" ]]; then
-  echo "Theme colors not found: $BTOP_THEME" >&2
+if [[ ! -f "$ALACRITTY_THEME" ]]; then
+  echo "Alacritty theme not found: $ALACRITTY_THEME" >&2
+  echo "Kitty themes require alacritty.toml for complete color palette" >&2
   exit 1
 fi
 
-# Extract colors from btop.theme
-main_bg=$(grep 'theme\[main_bg\]' "$BTOP_THEME" | sed 's/.*="\(#[^"]*\)".*/\1/')
-main_fg=$(grep 'theme\[main_fg\]' "$BTOP_THEME" | sed 's/.*="\(#[^"]*\)".*/\1/')
-selected_bg=$(grep 'theme\[selected_bg\]' "$BTOP_THEME" | sed 's/.*="\(#[^"]*\)".*/\1/')
-hi_fg=$(grep 'theme\[hi_fg\]' "$BTOP_THEME" | sed 's/.*="\(#[^"]*\)".*/\1/')
-inactive_fg=$(grep 'theme\[inactive_fg\]' "$BTOP_THEME" | sed 's/.*="\(#[^"]*\)".*/\1/')
+# Extract primary colors from alacritty.toml (most complete color source)
+foreground=$(sed -n '/^\[colors\.primary\]/,/^\[/p' "$ALACRITTY_THEME" | grep '^foreground' | sed 's/.*= *"\(#[0-9a-fA-F]*\)".*/\1/')
+background=$(sed -n '/^\[colors\.primary\]/,/^\[/p' "$ALACRITTY_THEME" | grep '^background' | sed 's/.*= *"\(#[0-9a-fA-F]*\)".*/\1/')
 
-# Fallback to alacritty if btop colors are insufficient
-if [[ -z "$main_bg" || -z "$main_fg" ]] && [[ -f "$THEME_DIR/alacritty.toml" ]]; then
-  echo "# Using alacritty.toml as fallback for missing colors"
-  main_bg=$(grep -A3 '\[colors.primary\]' "$THEME_DIR/alacritty.toml" | grep 'background' | sed 's/.*= *.\(#[0-9a-fA-F]*\).*/\1/')
-  main_fg=$(grep -A3 '\[colors.primary\]' "$THEME_DIR/alacritty.toml" | grep 'foreground' | sed 's/.*= *.\(#[0-9a-fA-F]*\).*/\1/')
-fi
+# Cursor colors
+cursor=$(sed -n '/^\[colors\.cursor\]/,/^\[/p' "$ALACRITTY_THEME" | grep '^cursor' | sed 's/.*= *"\(#[0-9a-fA-F]*\)".*/\1/')
+cursor_text=$(sed -n '/^\[colors\.cursor\]/,/^\[/p' "$ALACRITTY_THEME" | grep '^text' | sed 's/.*= *"\(#[0-9a-fA-F]*\)".*/\1/')
 
-# Generate kitty.conf
+# Selection colors  
+selection_bg=$(sed -n '/^\[colors\.selection\]/,/^\[/p' "$ALACRITTY_THEME" | grep '^background' | sed 's/.*= *"\(#[0-9a-fA-F]*\)".*/\1/')
+selection_fg="$foreground"  # Most themes use foreground for selection text
+
+# Generate kitty.conf with complete color palette
 cat > "$OUTPUT_FILE" << EOF
-# Kitty theme auto-generated from omarchy theme
-# Based on: $(basename "$THEME_DIR")
+# Kitty theme auto-generated from omarchy alacritty theme
+# Theme: $(basename "$THEME_DIR")
+# Source: alacritty.toml (canonical color palette)
 
 # Basic colors
-foreground $main_fg
-background $main_bg
+foreground $foreground
+background $background
 
 # Cursor
-cursor $hi_fg
-cursor_text_color $main_bg
+cursor $cursor
+cursor_text_color $cursor_text
 
 # Selection
-selection_foreground $main_fg
-selection_background $selected_bg
-
-# Tab bar colors
-tab_bar_background $main_bg
-active_tab_foreground $main_fg
-active_tab_background $selected_bg
-inactive_tab_foreground $inactive_fg
-inactive_tab_background $main_bg
+selection_foreground $selection_fg
+selection_background $selection_bg
 EOF
 
-# If alacritty.toml exists, extract the 16 terminal colors from it
-if [[ -f "$THEME_DIR/alacritty.toml" ]]; then
-  echo "" >> "$OUTPUT_FILE"
-  echo "# Terminal colors from alacritty theme" >> "$OUTPUT_FILE"
-  
-  # Normal colors (0-7)
-  colors=("black" "red" "green" "yellow" "blue" "magenta" "cyan" "white")
-  for i in "${!colors[@]}"; do
-    color=$(grep -A8 '\[colors.normal\]' "$THEME_DIR/alacritty.toml" | grep "^${colors[i]}" | sed 's/.*= *.\(#[0-9a-fA-F]*\).*/\1/')
-    echo "color$i $color" >> "$OUTPUT_FILE"
-  done
-  
-  # Bright colors (8-15)
-  for i in "${!colors[@]}"; do
-    bright_color=$(grep -A8 '\[colors.bright\]' "$THEME_DIR/alacritty.toml" | grep "^${colors[i]}" | sed 's/.*= *.\(#[0-9a-fA-F]*\).*/\1/')
-    echo "color$((i+8)) $bright_color" >> "$OUTPUT_FILE"
-  done
-else
-  echo "# Note: No terminal colors available - using theme defaults" >> "$OUTPUT_FILE"
-fi
+# Extract 16-color terminal palette
+echo "" >> "$OUTPUT_FILE"
+echo "# Terminal color palette" >> "$OUTPUT_FILE"
+
+# Normal colors (0-7)
+colors=("black" "red" "green" "yellow" "blue" "magenta" "cyan" "white")
+for i in "${!colors[@]}"; do
+  color=$(sed -n '/^\[colors\.normal\]/,/^\[/p' "$ALACRITTY_THEME" | grep "^${colors[i]}" | sed 's/.*= *"\(#[0-9a-fA-F]*\)".*/\1/')
+  echo "color$i $color" >> "$OUTPUT_FILE"
+done
+
+# Bright colors (8-15)
+for i in "${!colors[@]}"; do
+  bright_color=$(sed -n '/^\[colors\.bright\]/,/^\[/p' "$ALACRITTY_THEME" | grep "^${colors[i]}" | sed 's/.*= *"\(#[0-9a-fA-F]*\)".*/\1/')
+  echo "color$((i+8)) $bright_color" >> "$OUTPUT_FILE"
+done
+
+# Tab bar colors using palette
+echo "" >> "$OUTPUT_FILE"
+echo "# Tab bar colors" >> "$OUTPUT_FILE"
+echo "tab_bar_background $background" >> "$OUTPUT_FILE"
+echo "active_tab_foreground $foreground" >> "$OUTPUT_FILE"
+echo "active_tab_background $selection_bg" >> "$OUTPUT_FILE"
+bright_black=$(sed -n '/^\[colors\.bright\]/,/^\[/p' "$ALACRITTY_THEME" | grep '^black' | sed 's/.*= *"\(#[0-9a-fA-F]*\)".*/\1/')
+echo "inactive_tab_foreground $bright_black" >> "$OUTPUT_FILE"
+echo "inactive_tab_background $background" >> "$OUTPUT_FILE"
 
 echo "Generated kitty theme: $OUTPUT_FILE"
