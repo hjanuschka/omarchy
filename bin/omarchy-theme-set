@@ -62,7 +62,7 @@ touch "$HOME/.config/alacritty/alacritty.toml"
 if command -v kitty &>/dev/null && [[ -f "$CURRENT_THEME_DIR/alacritty.toml" ]]; then
   omarchy-generate-kitty-theme "$CURRENT_THEME_DIR"
   # Signal all running kitty instances to reload config
-  pkill -SIGUSR1 kitty 2>/dev/null || true
+  killall -SIGUSR1 kitty 2>/dev/null || true
 fi
 
 # Restart components to apply new theme
