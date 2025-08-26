@@ -58,9 +58,53 @@ fi
 # Trigger alacritty config reload
 touch "$HOME/.config/alacritty/alacritty.toml"
 
-# Generate kitty theme if kitty is installed and theme has alacritty.toml
-if command -v kitty &>/dev/null && [[ -f "$CURRENT_THEME_DIR/alacritty.toml" ]]; then
-  omarchy-generate-kitty-theme "$CURRENT_THEME_DIR"
+# Generate kitty theme if kitty is installed
+if command -v kitty &>/dev/null; then
+  if [[ -f "$CURRENT_THEME_DIR/alacritty.toml" ]]; then
+    omarchy-generate-kitty-theme "$CURRENT_THEME_DIR"
+  else
+    # Fallback to default kitty theme when no alacritty.toml exists
+    cat > "$CURRENT_THEME_DIR/kitty.conf" << 'EOF'
+# Default kitty theme (fallback when no alacritty.toml available)
+
+# Basic colors
+foreground #dddddd
+background #000000
+
+# Cursor
+cursor #cccccc
+cursor_text_color #111111
+
+# Selection
+selection_foreground #000000
+selection_background #fffacd
+
+# Terminal color palette (standard 16 colors)
+color0 #000000
+color1 #cc0403
+color2 #19cb00
+color3 #cecb00
+color4 #001cd1
+color5 #cb1ed1
+color6 #0dcdcd
+color7 #e5e5e5
+color8 #4d4d4d
+color9 #f2201f
+color10 #23fd00
+color11 #fffd00
+color12 #0026ff
+color13 #fd28ff
+color14 #14ffff
+color15 #ffffff
+
+# Tab bar colors
+tab_bar_background #000000
+active_tab_foreground #dddddd
+active_tab_background #4d4d4d
+inactive_tab_foreground #cccccc
+inactive_tab_background #000000
+EOF
+  fi
   # Signal all running kitty instances to reload config
   killall -SIGUSR1 kitty 2>/dev/null || true
 fi
